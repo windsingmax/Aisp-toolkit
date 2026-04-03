@@ -1,6 +1,6 @@
 # AIServiceProxy — Skill + MCP 调用指南
 
-本文档说明如何通过 **Cursor Skill** 与 **MCP Server** 两种方式调用吉比特内网 AIServiceProxy 网关，覆盖密钥配置、可用工具、实际调用示例与排错流程。
+本文档说明如何通过 **Cursor / Codex / Claude Code** 的 Skill 与 MCP Server 调用吉比特内网 AIServiceProxy 网关，覆盖密钥配置、可用工具、实际调用示例与排错流程。
 
 ---
 
@@ -16,15 +16,16 @@
 8. [同步与异步任务](#8-同步与异步任务)
 9. [常见错误与排错](#9-常见错误与排错)
 10. [安全守则](#10-安全守则)
+11. [各 AI 工具的配置差异](#11-各-ai-工具的配置差异)
 
 ---
 
 ## 1. 架构总览
 
 ```
-用户请求
+用户请求（Cursor / Codex / Claude Code）
   │
-  ├─→ [MCP Server]  gbits-aiserviceproxy     ← Cursor 内置，AI 自动调用
+  ├─→ [MCP Server]  gbits-aiserviceproxy     ← AI 自动调用（三个工具都支持）
   │     ├── ping_gateway        （连通性测试）
   │     ├── get_available_models （查可用模型）
   │     └── generate_image      （图片生成 + 自动下载）
@@ -54,11 +55,13 @@
 
 ### 2.1 MCP Server 方式
 
-MCP Server 的 Key 在 Cursor MCP 配置中设置，通常已由项目初始化完成。若未配置，在 Cursor Settings → MCP 中找到 `gbits-aiserviceproxy`，添加环境变量：
+MCP Server 的 Key 通过各 AI 工具的 MCP 配置传入：
 
-```
-AISERVICEPROXY_API_KEY = <你的 Key>
-```
+- **Cursor**：Settings → MCP → 对应 server 的 `env` 字段
+- **Codex**：`~/.codex/config.toml` 中 `[mcp_servers.gbits-aiserviceproxy.env]`
+- **Claude Code**：项目目录下 `.mcp.json` 中的 `env` 字段
+
+具体配置步骤见 README 或本文档 [第 11 节](#11-各-ai-工具的配置差异)。
 
 ### 2.2 Skill 脚本方式
 
@@ -404,10 +407,98 @@ API Key 可对应以下权限，调用前确认覆盖：
 
 ## 附录：文件位置速查
 
-| 文件 | 路径 | 用途 |
-|------|------|------|
-| Skill 文档 | `~/.claude/skills/gbits-aiserviceproxy-api/SKILL.md` | AI 助手参考的完整规范 |
-| 包装脚本 | `~/.claude/skills/gbits-aiserviceproxy-api/scripts/invoke-aisp.ps1` | 安全调用网关 |
-| 密钥文件 | `%USERPROFILE%\.gbits\aiserviceproxy_api_key.txt` | 存放 API Key（用户创建） |
-| MCP 工具描述 | `mcps/user-gbits-aiserviceproxy/tools/*.json` | Cursor MCP 工具 schema |
-| API 详细规范 | `~/.claude/skills/gbits-aiserviceproxy-api/reference.md` | 指向团队 HTTP_GUIDE.md |
+| 文件 | Cursor | Codex | Claude Code |
+|------|--------|-------|-------------|
+| Skill 目录 | `~/.cursor/skills/gbits-aiserviceproxy-api/` | `~/.codex/skills/gbits-aiserviceproxy-api/` | `~/.claude/skills/gbits-aiserviceproxy-api/` |
+| MCP 配置 | `~/.cursor/mcp.json` | `~/.codex/config.toml` | 项目目录 `.mcp.json` |
+| 密钥文件（Skill 脚本用） | `%USERPROFILE%\.gbits\aiserviceproxy_api_key.txt` | 同左 | 同左 |
+
+---
+
+## 11. 各 AI 工具的配置差异
+
+MCP Server 的 `server.py` 和 Skill 的 `SKILL.md` 在三个 AI 工具中完全通用，区别仅在于**配置文件格式**和**安装路径**。
+
+### 11.1 Cursor
+
+**MCP 配置**：`~/.cursor/mcp.json`（JSON 格式）
+
+```json
+{
+  "mcpServers": {
+    "gbits-aiserviceproxy": {
+      "command": "仓库路径/mcp-server/.venv/Scripts/python.exe",
+      "args": ["仓库路径/mcp-server/server.py"],
+      "env": {
+        "AISERVICEPROXY_API_KEY": "你的Key"
+      }
+    }
+  }
+}
+```
+
+**Skill 安装**：
+
+```powershell
+Copy-Item -Recurse "仓库路径\skill" "$HOME\.cursor\skills\gbits-aiserviceproxy-api"
+```
+
+### 11.2 Codex CLI
+
+**MCP 配置**：`~/.codex/config.toml`（TOML 格式）
+
+方法 A — 命令行一键添加：
+
+```powershell
+codex mcp add gbits-aiserviceproxy --env AISERVICEPROXY_API_KEY=你的Key -- "仓库路径\mcp-server\.venv\Scripts\python.exe" "仓库路径\mcp-server\server.py"
+```
+
+方法 B — 手动编辑 `config.toml`，在末尾追加：
+
+```toml
+[mcp_servers.gbits-aiserviceproxy]
+command = "仓库路径\\mcp-server\\.venv\\Scripts\\python.exe"
+args = ["仓库路径\\mcp-server\\server.py"]
+
+[mcp_servers.gbits-aiserviceproxy.env]
+AISERVICEPROXY_API_KEY = "你的Key"
+```
+
+**Skill 安装**：
+
+```powershell
+Copy-Item -Recurse "仓库路径\skill" "$HOME\.codex\skills\gbits-aiserviceproxy-api"
+```
+
+### 11.3 Claude Code
+
+**MCP 配置**：项目目录下 `.mcp.json`（JSON 格式，和 Cursor 相同）
+
+```json
+{
+  "mcpServers": {
+    "gbits-aiserviceproxy": {
+      "command": "仓库路径/mcp-server/.venv/Scripts/python.exe",
+      "args": ["仓库路径/mcp-server/server.py"],
+      "env": {
+        "AISERVICEPROXY_API_KEY": "你的Key"
+      }
+    }
+  }
+}
+```
+
+**Skill 安装**：
+
+```powershell
+Copy-Item -Recurse "仓库路径\skill" "$HOME\.claude\skills\gbits-aiserviceproxy-api"
+```
+
+### 11.4 配置格式对比
+
+| 项目 | Cursor | Codex | Claude Code |
+|------|--------|-------|-------------|
+| MCP 配置格式 | JSON | TOML | JSON |
+| MCP 配置位置 | `~/.cursor/mcp.json` | `~/.codex/config.toml` | 项目目录 `.mcp.json` |
+| Skill 位置 | `~/.cursor/skills/` | `~/.codex/skills/` | `~/.claude/skills/` |
+| 一键添加 MCP | 需手动编辑 JSON | `codex mcp add` 命令 | 需手动编辑 JSON |
