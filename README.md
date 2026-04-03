@@ -1,93 +1,119 @@
 # gbits-aisp-toolkit
 
+吉比特内网 AIServiceProxy 网关的 AI 助手工具集，包含 **MCP Server** 和 **Cursor/Claude Skill** 两部分。
 
-
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## 仓库结构
 
 ```
-cd existing_repo
-git remote add origin https://comgitlab.g-bits.com/cenjy/gbits-aisp-toolkit.git
-git branch -M main
-git push -uf origin main
+gbits-aisp-toolkit/
+├── mcp-server/             # MCP Server（Python）
+│   ├── server.py           # 服务主入口
+│   └── requirements.txt    # Python 依赖
+├── skill/                  # Cursor / Claude Skill
+│   ├── SKILL.md            # Skill 主文档（AI 参考规范）
+│   ├── reference.md        # API 详细参考
+│   └── scripts/
+│       └── invoke-aisp.ps1 # 安全调用包装脚本
+└── docs/
+    └── guide.md            # 完整使用指南
 ```
 
-## Integrate with your tools
+## 快速开始
 
-- [ ] [Set up project integrations](https://comgitlab.g-bits.com/cenjy/gbits-aisp-toolkit/-/settings/integrations)
+### 方式一：MCP Server（推荐）
 
-## Collaborate with your team
+MCP Server 让 Cursor/Claude 等 AI 助手直接调用网关接口，无需手动 curl，无需在终端暴露 API Key。
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+**1. 安装依赖**
 
-## Test and Deploy
+```bash
+cd mcp-server
+python -m venv .venv
+.venv/Scripts/activate    # Windows
+pip install -r requirements.txt
+```
 
-Use the built-in continuous integration in GitLab.
+**2. 在 Cursor 中配置 MCP**
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+打开 Cursor Settings → Features → MCP → Add New MCP Server：
 
-***
+- **Name**: `gbits-aiserviceproxy`
+- **Type**: `command`
+- **Command**: `<仓库路径>/mcp-server/.venv/Scripts/python.exe`
+- **Args**: `<仓库路径>/mcp-server/server.py`
+- **Env**: `AISERVICEPROXY_API_KEY` = `你的 API Key`
 
-# Editing this README
+**3. 测试连通性**
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+在 Cursor 聊天中输入：「帮我测试一下 AIServiceProxy 的连通性」
 
-## Suggestions for a good README
+### 方式二：Skill 脚本
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+适用于 MCP 未覆盖的接口（LLM 对话、视频生成等）。
 
-## Name
-Choose a self-explaining name for your project.
+**1. 创建密钥文件**（一次性，不要把 Key 发给 AI）
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+```powershell
+mkdir "$HOME\.gbits" -Force
+notepad "$HOME\.gbits\aiserviceproxy_api_key.txt"
+```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+**2. 安装 Skill**
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+将 `skill/` 目录复制到对应位置：
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+```powershell
+# Cursor
+Copy-Item -Recurse skill "$HOME\.cursor\skills\gbits-aiserviceproxy-api"
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+# Claude Code
+Copy-Item -Recurse skill "$HOME\.claude\skills\gbits-aiserviceproxy-api"
+```
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+**3. 使用**
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Skill 脚本通过 `invoke-aisp.ps1` 安全调用网关，审批框中不会出现 API Key：
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File `
+  "skill/scripts/invoke-aisp.ps1" `
+  -Method GET `
+  -Uri "http://aitools.g-bits.com/aiserviceproxy/api/v1/config/models"
+```
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## MCP 提供的工具
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+| 工具 | 功能 |
+|------|------|
+| `ping_gateway` | 测试网关连通性与 Key 有效性 |
+| `get_available_models` | 查询可用模型列表，支持按类型筛选 |
+| `generate_image` | 文生图，支持别名（大香蕉→gemini-3-pro），自动下载到本地 |
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+## 支持的模型（部分）
 
-## License
-For open source projects, say how it is licensed.
+| 类型 | 模型 |
+|------|------|
+| LLM | gpt-5.4, claude-sonnet-4.6, gemini-3-pro, deepseek-3.2 |
+| 图片 | jimeng-4.5, gemini-3-pro (banana-pro), gpt-image-1.5, flux-2-pro |
+| 视频 | veo-3.1, kling-2.6, sora-2 |
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+> 以 `get_available_models` 或 `GET /api/v1/config/models` 线上结果为准。
+
+## 安全须知
+
+- **禁止**在对话、PR、截图中暴露 API Key
+- MCP Server 通过环境变量传入 Key，进程内使用，不会出现在终端
+- Skill 脚本从本机文件 `~/.gbits/aiserviceproxy_api_key.txt` 读取 Key
+- 详见 [docs/guide.md](docs/guide.md) 安全守则章节
+
+## 前置要求
+
+- Python 3.10+
+- 内网可达 `aitools.g-bits.com`（外网需 VPN）
+- 有效的 AIServiceProxy API Key（需含对应 service_type 权限）
+
+## 详细文档
+
+- [完整使用指南](docs/guide.md) — Skill + MCP + curl 三种调用方式详解
+- [Skill 规范](skill/SKILL.md) — AI 助手参考的完整规范
+- [API 参考](skill/reference.md) — 指向团队 HTTP_GUIDE.md
