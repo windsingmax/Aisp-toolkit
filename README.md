@@ -57,21 +57,46 @@ pip install -r requirements.txt
 
 ### 用 Cursor 的同事看这里
 
-#### 配置 MCP Server（让 AI 能出图、查模型）
+> **最简单的方式**：把下面的提示词复制粘贴进 Cursor 聊天框（Agent 模式），让 AI 帮你搞定。
 
-1. 打开 Cursor
-2. 点左上角 **齿轮图标** → 进入 **Settings**
-3. 左侧找到 **MCP** 一栏
-4. 点 **+ Add new global MCP server**
-5. 会打开一个 JSON 文件，把里面的内容替换成：
+#### 一键安装提示词（复制粘贴进 Cursor 就行）
+
+把下面这段话**整段复制**，粘贴到 Cursor 聊天框，**把两处需要填的地方改掉**，回车发送：
+
+---
+
+> 帮我安装 AIServiceProxy 工具包。请按以下步骤操作：
+>
+> 1. 克隆仓库：`git clone https://comgitlab.g-bits.com/cenjy/gbits-aisp-toolkit.git`（如果本地已有就跳过）
+> 2. 进入 `gbits-aisp-toolkit/mcp-server` 目录，创建 Python 虚拟环境并安装依赖：`python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt`
+> 3. 把 `gbits-aisp-toolkit/skill` 整个目录复制到 `%USERPROFILE%\.cursor\skills\gbits-aiserviceproxy-api`
+> 4. 帮我编辑 `%USERPROFILE%\.cursor\mcp.json`，在 mcpServers 中添加 `gbits-aiserviceproxy`，command 指向刚才创建的 `.venv\Scripts\python.exe`，args 指向 `server.py`，env 里的 AISERVICEPROXY_API_KEY 设为：`这里换成你的Key`
+> 5. 完成后帮我测试一下 AIServiceProxy 的连通性
+
+---
+
+**你只需要改一个地方**：把 `这里换成你的Key` 替换成管理员给你的 Key（以 `asp_` 开头的那串）。
+
+发送后 Cursor 会自动帮你完成所有步骤。最后看到 MCP 设置页面 `gbits-aiserviceproxy` 旁边出现**绿点**就成功了。
+
+#### 如果你想手动配
+
+<details>
+<summary>点击展开手动配置步骤</summary>
+
+**配置 MCP Server**
+
+1. 打开 Cursor → 点左上角 **齿轮图标** → **Settings** → 左侧找到 **MCP**
+2. 点 **+ Add new global MCP server**
+3. 把打开的 JSON 文件内容替换成：
 
 ```json
 {
   "mcpServers": {
     "gbits-aiserviceproxy": {
-      "command": "这里换成你的路径/mcp-server/.venv/Scripts/python.exe",
+      "command": "这里换成你的路径\\mcp-server\\.venv\\Scripts\\python.exe",
       "args": [
-        "这里换成你的路径/mcp-server/server.py"
+        "这里换成你的路径\\mcp-server\\server.py"
       ],
       "env": {
         "AISERVICEPROXY_API_KEY": "这里换成你的Key"
@@ -81,33 +106,58 @@ pip install -r requirements.txt
 }
 ```
 
-> **路径示例**：如果你把仓库下载到了 `D:\gbits-aisp-toolkit`，那就是：
+> **路径示例**：仓库在 `D:\gbits-aisp-toolkit` 时：
 > - command: `D:\\gbits-aisp-toolkit\\mcp-server\\.venv\\Scripts\\python.exe`
-> - args 里: `D:\\gbits-aisp-toolkit\\mcp-server\\server.py`
+> - args: `D:\\gbits-aisp-toolkit\\mcp-server\\server.py`
 >
-> 注意 JSON 里的路径要用 `\\`（双反斜杠）。
+> JSON 里的路径要用 `\\`（双反斜杠）。
 
-6. 保存文件，回到 MCP 设置页面，确认 `gbits-aiserviceproxy` 旁边出现**绿点**就说明成功了
+4. 保存，确认旁边出现**绿点**就成功了
 
-#### 配置 Skill（让 AI 懂得怎么用网关）
-
-打开终端，复制粘贴：
+**配置 Skill**
 
 ```powershell
 Copy-Item -Recurse "你的仓库路径\skill" "$HOME\.cursor\skills\gbits-aiserviceproxy-api"
 ```
 
-#### 验证
+**验证**
 
 在 Cursor 聊天框里输入：「帮我测试一下 AIServiceProxy 的连通性」
 
-看到「连接成功」就好了！
+</details>
 
 ---
 
 ### 用 Codex 的同事看这里
 
-#### 配置 MCP Server
+> **最简单的方式**：把下面的提示词复制粘贴进 Codex，让 Codex 帮你搞定一切。
+
+#### 一键安装提示词（复制粘贴进 Codex 就行）
+
+把下面这段话**整段复制**，粘贴到 Codex 对话框，然后**把里面两处需要你填的地方改掉**，回车发送：
+
+---
+
+> 帮我安装 AIServiceProxy 工具包。请按以下步骤操作：
+>
+> 1. 克隆仓库：`git clone https://comgitlab.g-bits.com/cenjy/gbits-aisp-toolkit.git`（如果本地已有就跳过）
+> 2. 进入 `gbits-aisp-toolkit/mcp-server` 目录，创建 Python 虚拟环境并安装依赖：`python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt`
+> 3. 把 `gbits-aisp-toolkit/skill` 整个目录复制到 `%USERPROFILE%\.codex\skills\gbits-aiserviceproxy-api`
+> 4. 在 `%USERPROFILE%\.codex\config.toml` 末尾追加 MCP 配置，command 指向刚才创建的 `.venv\Scripts\python.exe`，args 指向 `server.py`，env 里的 AISERVICEPROXY_API_KEY 设为：`这里换成你的Key`
+> 5. 完成后帮我测试一下 AIServiceProxy 的连通性
+
+---
+
+**你只需要改一个地方**：把 `这里换成你的Key` 替换成管理员给你的 Key（以 `asp_` 开头的那串）。
+
+发送后 Codex 会自动帮你完成所有步骤。看到「连接成功」就说明装好了。
+
+#### 如果你想手动配
+
+<details>
+<summary>点击展开手动配置步骤</summary>
+
+**配置 MCP Server**
 
 打开终端，输入：
 
@@ -121,7 +171,7 @@ codex mcp add gbits-aiserviceproxy --env AISERVICEPROXY_API_KEY=你的Key -- "�
 > codex mcp add gbits-aiserviceproxy --env AISERVICEPROXY_API_KEY=asp_abc123 -- "D:\gbits-aisp-toolkit\mcp-server\.venv\Scripts\python.exe" "D:\gbits-aisp-toolkit\mcp-server\server.py"
 > ```
 
-如果更习惯手动编辑，也可以打开 `%USERPROFILE%\.codex\config.toml`，在末尾加上：
+或者手动编辑 `%USERPROFILE%\.codex\config.toml`，在末尾加上：
 
 ```toml
 [mcp_servers.gbits-aiserviceproxy]
@@ -132,25 +182,48 @@ args = ["你的仓库路径\\mcp-server\\server.py"]
 AISERVICEPROXY_API_KEY = "你的Key"
 ```
 
-#### 配置 Skill
-
-打开终端，复制粘贴：
+**配置 Skill**
 
 ```powershell
 Copy-Item -Recurse "你的仓库路径\skill" "$HOME\.codex\skills\gbits-aiserviceproxy-api"
 ```
 
-#### 验证
+**验证**
 
 启动 Codex，输入：「帮我测试一下 AIServiceProxy 的连通性」
+
+</details>
 
 ---
 
 ### 用 Claude Code 的同事看这里
 
-#### 配置 MCP Server
+> **最简单的方式**：把下面的提示词复制粘贴进 Claude Code，让 AI 帮你搞定。
 
-在你的项目目录下创建或编辑 `.mcp.json` 文件：
+#### 一键安装提示词（复制粘贴进 Claude Code 就行）
+
+---
+
+> 帮我安装 AIServiceProxy 工具包。请按以下步骤操作：
+>
+> 1. 克隆仓库：`git clone https://comgitlab.g-bits.com/cenjy/gbits-aisp-toolkit.git`（如果本地已有就跳过）
+> 2. 进入 `gbits-aisp-toolkit/mcp-server` 目录，创建 Python 虚拟环境并安装依赖：`python -m venv .venv && .venv/Scripts/activate && pip install -r requirements.txt`
+> 3. 把 `gbits-aisp-toolkit/skill` 整个目录复制到 `~/.claude/skills/gbits-aiserviceproxy-api`
+> 4. 在当前项目目录创建 `.mcp.json`，添加 `gbits-aiserviceproxy`，command 指向 `.venv/Scripts/python.exe`，args 指向 `server.py`，env 里的 AISERVICEPROXY_API_KEY 设为：`这里换成你的Key`
+> 5. 完成后帮我测试一下 AIServiceProxy 的连通性
+
+---
+
+**你只需要改一个地方**：把 `这里换成你的Key` 替换成管理员给你的 Key。
+
+#### 如果你想手动配
+
+<details>
+<summary>点击展开手动配置步骤</summary>
+
+**配置 MCP Server**
+
+在项目目录下创建或编辑 `.mcp.json`：
 
 ```json
 {
@@ -168,17 +241,17 @@ Copy-Item -Recurse "你的仓库路径\skill" "$HOME\.codex\skills\gbits-aiservi
 }
 ```
 
-#### 配置 Skill
-
-打开终端，复制粘贴：
+**配置 Skill**
 
 ```powershell
 Copy-Item -Recurse "你的仓库路径\skill" "$HOME\.claude\skills\gbits-aiserviceproxy-api"
 ```
 
-#### 验证
+**验证**
 
 在 Claude Code 中输入：「帮我测试一下 AIServiceProxy 的连通性」
+
+</details>
 
 ---
 
