@@ -21,7 +21,7 @@
 打开终端（PowerShell），复制粘贴下面的命令：
 
 ```powershell
-git clone https://comgitlab.g-bits.com/cenjy/gbits-aisp-toolkit.git
+git clone https://github.com/windsingmax/Aisp-toolkit.git
 ```
 
 记住下载到的文件夹路径，后面要用（比如 `D:\gbits-aisp-toolkit`）。
@@ -67,7 +67,7 @@ pip install -r requirements.txt
 
 > 帮我安装 AIServiceProxy 工具包。请按以下步骤操作：
 >
-> 1. 克隆仓库：`git clone https://comgitlab.g-bits.com/cenjy/gbits-aisp-toolkit.git`（如果本地已有就跳过）
+> 1. 克隆仓库：`git clone https://github.com/windsingmax/Aisp-toolkit.git`（如果本地已有就跳过）
 > 2. 进入 `gbits-aisp-toolkit/mcp-server` 目录，创建 Python 虚拟环境并安装依赖：`python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt`
 > 3. 把 `gbits-aisp-toolkit/skill` 整个目录复制到 `%USERPROFILE%\.cursor\skills\gbits-aiserviceproxy-api`
 > 4. 帮我编辑 `%USERPROFILE%\.cursor\mcp.json`，在 mcpServers 中添加 `gbits-aiserviceproxy`，command 指向刚才创建的 `.venv\Scripts\python.exe`，args 指向 `server.py`，env 里的 AISERVICEPROXY_API_KEY 设为：`这里换成你的Key`
@@ -140,7 +140,7 @@ Copy-Item -Recurse "你的仓库路径\skill" "$HOME\.cursor\skills\gbits-aiserv
 
 > 帮我安装 AIServiceProxy 工具包。请按以下步骤操作：
 >
-> 1. 克隆仓库：`git clone https://comgitlab.g-bits.com/cenjy/gbits-aisp-toolkit.git`（如果本地已有就跳过）
+> 1. 克隆仓库：`git clone https://github.com/windsingmax/Aisp-toolkit.git`（如果本地已有就跳过）
 > 2. 进入 `gbits-aisp-toolkit/mcp-server` 目录，创建 Python 虚拟环境并安装依赖：`python -m venv .venv && .venv\Scripts\activate && pip install -r requirements.txt`
 > 3. 把 `gbits-aisp-toolkit/skill` 整个目录复制到 `%USERPROFILE%\.codex\skills\gbits-aiserviceproxy-api`
 > 4. 在 `%USERPROFILE%\.codex\config.toml` 末尾追加 MCP 配置，command 指向刚才创建的 `.venv\Scripts\python.exe`，args 指向 `server.py`，env 里的 AISERVICEPROXY_API_KEY 设为：`这里换成你的Key`
@@ -206,7 +206,7 @@ Copy-Item -Recurse "你的仓库路径\skill" "$HOME\.codex\skills\gbits-aiservi
 
 > 帮我安装 AIServiceProxy 工具包。请按以下步骤操作：
 >
-> 1. 克隆仓库：`git clone https://comgitlab.g-bits.com/cenjy/gbits-aisp-toolkit.git`（如果本地已有就跳过）
+> 1. 克隆仓库：`git clone https://github.com/windsingmax/Aisp-toolkit.git`（如果本地已有就跳过）
 > 2. 进入 `gbits-aisp-toolkit/mcp-server` 目录，创建 Python 虚拟环境并安装依赖：`python -m venv .venv && .venv/Scripts/activate && pip install -r requirements.txt`
 > 3. 把 `gbits-aisp-toolkit/skill` 整个目录复制到 `~/.claude/skills/gbits-aiserviceproxy-api`
 > 4. 在当前项目目录创建 `.mcp.json`，添加 `gbits-aiserviceproxy`，command 指向 `.venv/Scripts/python.exe`，args 指向 `server.py`，env 里的 AISERVICEPROXY_API_KEY 设为：`这里换成你的Key`

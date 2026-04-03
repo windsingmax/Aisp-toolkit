@@ -203,7 +203,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File `
   "$HOME\.claude\skills\gbits-aiserviceproxy-api\scripts\invoke-aisp.ps1" `
   -Method POST `
   -Uri "http://aitools.g-bits.com/aiserviceproxy/api/v1/llm/chat" `
-  -BodyPath "C:\Users\cenjy\tmp_llm_body.json"
+  -BodyPath "C:\Users\你的用户名\tmp_llm_body.json"
 ```
 
 ### 4.3 POST 请求（图片生成）
@@ -224,7 +224,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File `
   "$HOME\.claude\skills\gbits-aiserviceproxy-api\scripts\invoke-aisp.ps1" `
   -Method POST `
   -Uri "http://aitools.g-bits.com/aiserviceproxy/api/v1/image/generate" `
-  -BodyPath "C:\Users\cenjy\tmp_img_body.json"
+  -BodyPath "C:\Users\你的用户名\tmp_img_body.json"
 ```
 
 ---

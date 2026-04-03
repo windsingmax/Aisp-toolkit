@@ -9,8 +9,8 @@ from mcp.server.fastmcp import FastMCP
 mcp = FastMCP("Gbits-AIServiceProxy")
 
 BASE_URL = "http://aitools.g-bits.com/aiserviceproxy/api/v1"
-DEFAULT_SAVE_DIR = r"e:\claude\img"
-DEFAULT_VIDEO_DIR = r"e:\claude\video"
+DEFAULT_SAVE_DIR = str(Path.home() / "aisp-output" / "img")
+DEFAULT_VIDEO_DIR = str(Path.home() / "aisp-output" / "video")
 
 def get_headers():
     api_key = os.getenv("AISERVICEPROXY_API_KEY")
@@ -90,9 +90,9 @@ def generate_image(
         model: 模型名称。默认 jimeng-4.5。
                别名支持：大香蕉 / banana-pro → gemini-3-pro；小香蕉 / banana2 → gemini-3.1-flash-image。
         save_path: 本地保存目录。
-                   【重要】用户说"存到桌面"请传入 C:\\Users\\cenjy\\Desktop；
+                   用户说"存到桌面"请传入用户桌面的绝对路径；
                    用户说"存到 XXX 目录"请传入对应路径；
-                   用户未指定则留空，工具自动存到默认路径 e:\\claude\\img。
+                   用户未指定则留空，工具自动存到默认路径 ~/aisp-output/img。
                    【禁止】不得在工具调用完成后再用 Copy-Item 或其他命令二次复制，
                    必须在调用本工具时直接通过 save_path 指定目标路径，图片只保存一份。
     """
