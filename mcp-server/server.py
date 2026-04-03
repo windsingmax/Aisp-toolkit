@@ -1,5 +1,6 @@
 import os
 import re
+import time
 import httpx
 import datetime
 from pathlib import Path
@@ -9,6 +10,7 @@ mcp = FastMCP("Gbits-AIServiceProxy")
 
 BASE_URL = "http://aitools.g-bits.com/aiserviceproxy/api/v1"
 DEFAULT_SAVE_DIR = r"e:\claude\img"
+DEFAULT_VIDEO_DIR = r"e:\claude\video"
 
 def get_headers():
     api_key = os.getenv("AISERVICEPROXY_API_KEY")
@@ -182,6 +184,172 @@ def get_available_models(service_type: str = "") -> str:
             lines.append(f"{enabled} [{m.get('service_type')}] {m.get('model')}  ←  {m.get('vendor', '')}")
 
         return "\n".join(lines)
+
+    except ValueError as e:
+        return f"❌ 配置错误：{e}"
+    except Exception as e:
+        return f"❌ 未知错误：{e}"
+
+
+@mcp.tool()
+def generate_video(
+    prompt: str,
+    model: str = "jimeng-3.5-pro",
+    save_path: str = "",
+    auto_poll: bool = True,
+    poll_interval: int = 15,
+    max_wait: int = 600
+) -> str:
+    """
+    调用吉比特内部网关生成视频。
+    视频生成通常需要几十秒到几分钟，默认自动轮询等待完成并下载。
+
+    Args:
+        prompt: 视频的详细描述提示词。
+        model: 模型名称。默认 jimeng-3.5-pro。
+               常用：veo-3.1, vidu-q3-pro, hailuo-2.3, kling-2.6, sora-2。
+        save_path: 本地保存目录。未指定则存到默认路径。
+        auto_poll: 是否自动轮询等待完成。默认 True。
+                   设为 False 时只提交任务并返回 task_id，用户可手动调用 query_task 查询。
+        poll_interval: 轮询间隔秒数，默认 15 秒。
+        max_wait: 最大等待秒数，默认 600 秒（10 分钟）。超时后返回 task_id 供手动查询。
+    """
+    try:
+        headers = get_headers()
+        payload = {
+            "model": model,
+            "prompt": prompt,
+            "async": True
+        }
+
+        response = httpx.post(f"{BASE_URL}/video/generate", json=payload, headers=headers, timeout=30.0)
+
+        if response.status_code != 200:
+            return f"❌ HTTP 错误：{response.status_code} - {response.text}"
+
+        data = response.json()
+        if not data.get("success"):
+            error = data.get("error", {})
+            return f"❌ 提交失败：{error.get('message')}\n详情：{error.get('detail', '')}"
+
+        task_id = data.get("data", {}).get("task_id")
+        if not task_id:
+            return f"❌ 未返回 task_id，响应：{data}"
+
+        if not auto_poll:
+            return (
+                f"✅ 视频生成任务已提交！\n\n"
+                f"模型：{model}\n"
+                f"task_id：{task_id}\n\n"
+                f"视频生成需要时间，请稍后调用 query_task 查询进度。"
+            )
+
+        elapsed = 0
+        while elapsed < max_wait:
+            time.sleep(poll_interval)
+            elapsed += poll_interval
+
+            task_resp = httpx.get(f"{BASE_URL}/tasks/{task_id}", headers=headers, timeout=15.0)
+            if task_resp.status_code != 200:
+                continue
+
+            task_data = task_resp.json()
+            if not task_data.get("success"):
+                continue
+
+            status = task_data.get("data", {}).get("status", "")
+
+            if status == "failed":
+                err = task_data.get("data", {}).get("error", {})
+                return f"❌ 视频生成失败：{err.get('message', '未知错误')}"
+
+            if status == "completed":
+                result = task_data.get("data", {}).get("result", {})
+                video_url = None
+                if isinstance(result, dict):
+                    videos = result.get("videos", [])
+                    if videos:
+                        video_url = videos[0].get("url")
+                    if not video_url:
+                        video_url = result.get("url")
+
+                if not video_url:
+                    return (
+                        f"✅ 视频生成完成，但未解析到下载链接。\n\n"
+                        f"task_id：{task_id}\n"
+                        f"原始结果：{result}"
+                    )
+
+                dir_to_use = save_path.strip() if save_path.strip() else DEFAULT_VIDEO_DIR
+                ext = "mp4"
+                filename = make_filename(prompt, ext)
+                local_path = download_file(video_url, dir_to_use, filename)
+
+                cost = task_data.get("cost", {}).get("amount", "?")
+                currency = task_data.get("cost", {}).get("currency", "")
+
+                return (
+                    f"✅ 视频生成并下载完成！\n\n"
+                    f"模型：{model}\n"
+                    f"耗时：约 {elapsed} 秒\n"
+                    f"花费：{cost} {currency}\n"
+                    f"本地路径：{local_path}\n"
+                    f"视频链接：{video_url}"
+                )
+
+        return (
+            f"⏰ 等待超时（{max_wait} 秒），视频可能仍在生成中。\n\n"
+            f"task_id：{task_id}\n"
+            f"请稍后调用 query_task 查询进度。"
+        )
+
+    except ValueError as e:
+        return f"❌ 配置错误：{e}"
+    except httpx.TimeoutException:
+        return "❌ 超时：提交请求超时，请稍后重试。"
+    except Exception as e:
+        return f"❌ 未知错误：{e}"
+
+
+@mcp.tool()
+def query_task(task_id: str) -> str:
+    """
+    查询异步任务的状态和结果。
+    用于视频生成等长耗时任务，凭 task_id 查看进度或获取下载链接。
+
+    Args:
+        task_id: 提交异步任务时返回的任务 ID。
+    """
+    try:
+        response = httpx.get(f"{BASE_URL}/tasks/{task_id}", headers=get_headers(), timeout=15.0)
+
+        if response.status_code != 200:
+            return f"❌ HTTP 错误：{response.status_code}"
+
+        data = response.json()
+        if not data.get("success"):
+            return f"❌ 查询失败：{data.get('error', {}).get('message')}"
+
+        task = data.get("data", {})
+        status = task.get("status", "unknown")
+        progress = task.get("progress")
+
+        if status == "completed":
+            result = task.get("result", {})
+            cost = data.get("cost", {}).get("amount", "?")
+            currency = data.get("cost", {}).get("currency", "")
+            return (
+                f"✅ 任务已完成！\n\n"
+                f"状态：{status}\n"
+                f"花费：{cost} {currency}\n"
+                f"结果：{result}"
+            )
+        elif status == "failed":
+            err = task.get("error", {})
+            return f"❌ 任务失败：{err.get('message', '未知错误')}"
+        else:
+            progress_str = f"（进度：{progress}%）" if progress is not None else ""
+            return f"⏳ 任务进行中{progress_str}\n\n状态：{status}\ntask_id：{task_id}"
 
     except ValueError as e:
         return f"❌ 配置错误：{e}"
